@@ -4,20 +4,34 @@ import AppKit
 @MainActor
 public enum Frisson {
     public enum Pattern {
-        case generic, alignment, levelChange
+        case generic
+        case alignment
+        case levelChange
 
-        fileprivate var native: NSHapticFeedbackManager.FeedbackPattern {
+        var feedback: NSHapticFeedbackManager.FeedbackPattern {
             switch self {
-            case .generic: .generic
-            case .alignment: .alignment
-            case .levelChange: .levelChange
+            case .generic: return .generic
+            case .alignment: return .alignment
+            case .levelChange: return .levelChange
             }
         }
     }
 
-    public static func play(_ pattern: Pattern) {
+    public static func play(_ pattern: Pattern = .generic, delay: TimeInterval = 0) {
+        guard delay > 0 else {
+            fire(pattern)
+            return
+        }
+
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+            fire(pattern)
+        }
+    }
+
+    private static func fire(_ pattern: Pattern) {
         NSHapticFeedbackManager.defaultPerformer.perform(
-            pattern.native,
+            pattern.feedback,
             performanceTime: .now
         )
     }
